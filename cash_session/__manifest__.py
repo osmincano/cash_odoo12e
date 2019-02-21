@@ -11,10 +11,11 @@
     'description': "",
     'depends': ['account'],
     'data': [
+        'wizard/cash_box.xml',
         'views/cash_session_view.xml',
     ],
     'demo': [
     ],
     'installable': True,
-    'application': True,
+    'application': False,
 }
