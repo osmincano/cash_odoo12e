@@ -6,6 +6,7 @@
     'version': '1.0.1',
     'category': 'Account',
     'sequence': 15,
+    'author': 'Osmin Cano --> osmincano@gmail.com',
     'summary': 'Cash Session payments partners and suppliers',
     'description': "",
     'depends': ['account'],
