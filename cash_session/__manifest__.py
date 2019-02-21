@@ -11,7 +11,7 @@
     'description': "",
     'depends': ['account'],
     'data': [
-        # 'views/point_of_sale_view.xml',
+        'views/cash_session_view.xml',
     ],
     'demo': [
     ],
