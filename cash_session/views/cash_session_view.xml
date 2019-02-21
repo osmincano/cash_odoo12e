@@ -133,7 +133,7 @@
         <field name="name">cash.session.tree.view</field>
         <field name="model">cash.session</field>
         <field name="arch" type="xml">
-            <tree string="Point of Sale Session" create="0">
+            <tree string="Cash Session" create="0">
                 <field name="config_id" />
                 <field name="name" />
                 <field name="user_id" />
@@ -148,7 +148,7 @@
         <field name="name">cash.session.search.view</field>
         <field name="model">cash.session</field>
         <field name="arch" type="xml">
-            <search string="Point of Sale Session">
+            <search string="Cash Session">
                 <field name="name" />
                 <filter name="open_sessions" string="Open" domain="[('state', '=', 'opened')]" />
                 <separator/>
@@ -157,7 +157,7 @@
                 <field name="user_id" />
                 <group expand="0" string="Group By">
                     <filter string="User" name="user" domain="[]" context="{'group_by' : 'user_id'}" />
-                    <filter string="Point of Sale" name="point_of_sale" domain="[]" context="{'group_by': 'config_id'}" />
+                    <filter string="Config Cash" name="config_cash" domain="[]" context="{'group_by': 'config_id'}" />
                 </group>
             </search>
         </field>
@@ -165,7 +165,6 @@
 
     <record id="action_cash_session" model="ir.actions.act_window">
         <field name="name">Sessions</field>
-        <field name="type">ir.actions.act_window</field>
         <field name="res_model">cash.session</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
@@ -174,7 +173,7 @@
             <p class="o_view_nocontent_empty_folder">
                 No sessions found
             </p><p>
-                A session is a period of time, usually one day, during which you sell through the Point of Sale.
+                A session is a period of time, usually one day, during which you sell through the Session.
             </p>
         </field>
     </record>
