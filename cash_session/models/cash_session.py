@@ -291,7 +291,7 @@ class CashSession(models.Model):
             for st in session.statement_ids:
                 if abs(st.difference) > st.journal_id.amount_authorized_diff:
                     # The pos manager can close statements with maximums.
-                    if not self.user_has_groups("point_of_sale.group_pos_manager"):
+                    if not self.user_has_groups("account.group_account_manager"):
                         raise UserError(_("Your ending balance is too different from the theoretical cash closing (%.2f), the maximum allowed is: %.2f. You can contact your manager to force it.") % (
                             st.difference, st.journal_id.amount_authorized_diff))
                 if (st.journal_id.type not in ['bank', 'cash']):
@@ -305,19 +305,6 @@ class CashSession(models.Model):
             'name': 'Point of Sale Menu',
             'tag': 'reload',
             'params': {'menu_id': self.env.ref('point_of_sale.menu_point_root').id},
-        }
-
-    @api.multi
-    def open_frontend_cb(self):
-        if not self.ids:
-            return {}
-        for session in self.filtered(lambda s: s.user_id.id != self.env.uid):
-            raise UserError(_("You cannot use the session of another user. This session is owned by %s. "
-                              "Please first close this one to use this point of sale.") % session.user_id.name)
-        return {
-            'type': 'ir.actions.act_url',
-            'target': 'self',
-            'url':   '/pos/web/',
         }
 
     @api.multi
