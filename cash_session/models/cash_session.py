@@ -45,8 +45,8 @@ class CashSession(models.Model):
             orders_to_reconcile.sudo()._reconcile_payments()
 
     config_id = fields.Many2one(
-        'pos.config', string='Point of Sale',
-        help="The physical point of sale you will use.",
+        'cash.config', string='Cash Config',
+        help="The physical Cash Config you will use.",
         required=True,
         index=True)
     name = fields.Char(string='Session ID', required=True, readonly=True, default='/')
@@ -168,19 +168,19 @@ class CashSession(models.Model):
             ('config_id', '=', self.config_id.id),
             ('rescue', '=', False)
         ]) > 1:
-            raise ValidationError(_("Another session is already opened for this point of sale."))
+            raise ValidationError(_("Another session is already opened for this cash session."))
 
     @api.model
     def create(self, values):
         config_id = values.get('config_id') or self.env.context.get('default_config_id')
         if not config_id:
-            raise UserError(_("You should assign a Point of Sale to your session."))
+            raise UserError(_("You should assign a Cash to your session."))
 
         # journal_id is not required on the pos_config because it does not
         # exists at the installation. If nothing is configured at the
         # installation we do the minimal configuration. Impossible to do in
         # the .xml files as the CoA is not yet installed.
-        pos_config = self.env['pos.config'].browse(config_id)
+        pos_config = self.env['cash.config'].browse(config_id)
         ctx = dict(self.env.context, company_id=pos_config.company_id.id)
         if not pos_config.journal_id:
             default_journals = pos_config.with_context(

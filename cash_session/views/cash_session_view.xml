@@ -133,7 +133,7 @@
         <field name="name">cash.session.tree.view</field>
         <field name="model">cash.session</field>
         <field name="arch" type="xml">
-            <tree string="Cash Session" create="0">
+            <tree string="Cash Session">
                 <field name="config_id" />
                 <field name="name" />
                 <field name="user_id" />
