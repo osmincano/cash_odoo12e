@@ -188,7 +188,7 @@ class CashSession(models.Model):
             if (not default_journals.get('journal_id') or
                     not default_journals.get('invoice_journal_id')):
                 raise UserError(
-                    _("Unable to open the session. You have to assign a sales journal to your point of sale."))
+                    _("Unable to open the session. You have to assign a sales journal to your cash config."))
             pos_config.with_context(ctx).sudo().write({
                 'journal_id': default_journals['journal_id'],
                 'invoice_journal_id': default_journals['invoice_journal_id']})
@@ -204,14 +204,13 @@ class CashSession(models.Model):
             journals.sudo().write({'journal_user': True})
             pos_config.sudo().write({'journal_ids': [(6, 0, journals.ids)]})
 
-        pos_name = self.env['ir.sequence'].with_context(ctx).next_by_code('pos.session')
+        pos_name = self.env['ir.sequence'].with_context(ctx).next_by_code('cash.session')
         if values.get('name'):
             pos_name += ' ' + values['name']
 
         statements = []
         ABS = self.env['account.bank.statement']
-        uid = SUPERUSER_ID if self.env.user.has_group(
-            'point_of_sale.group_pos_user') else self.env.user.id
+        uid = SUPERUSER_ID
         for journal in pos_config.journal_ids:
             # set the journal_id which should be used by
             # account.bank.statement to set the opening balance of the
@@ -231,7 +230,7 @@ class CashSession(models.Model):
             'config_id': config_id
         })
 
-        res = super(PosSession, self.with_context(ctx).sudo(uid)).create(values)
+        res = super(CashSession, self.with_context(ctx).sudo(uid)).create(values)
         if not pos_config.cash_control:
             res.action_pos_session_open()
 

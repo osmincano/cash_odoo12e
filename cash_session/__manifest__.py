@@ -15,6 +15,7 @@
         'wizard/cash_box.xml',
         'views/cash_session_view.xml',
         'views/cash_config_view.xml',
+        'views/cash_session_sequence.xml',
     ],
     'demo': [
     ],
