@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_cash_session_manager,cash.session,model_cash_session,account.group_account_manager,1,1,1,1
+access_cash_config_manager,cash.config,model_cash_config,account.group_account_manager,1,1,1,1
