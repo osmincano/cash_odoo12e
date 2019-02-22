@@ -5,3 +5,4 @@ from . import cash_session
 from . import cash_config
 from . import account_payment
 from . import account_bank_statement
+from . import account_journal
