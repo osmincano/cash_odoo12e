@@ -15,3 +15,8 @@ class AccountPayment(models.Model):
         domain="[('state', '=', 'opened')]", states={'draft': [('readonly', False)]},
         readonly=True, default=_default_session)
     picking_id = fields.Many2one('stock.picking', string='Picking', readonly=True, copy=False)
+
+    def _create_account_move(self, dt, ref, journal_id, company_id):
+        date_tz_user = fields.Datetime.context_timestamp(self, fields.Datetime.from_string(dt))
+        date_tz_user = fields.Date.to_string(date_tz_user)
+        return self.env['account.move'].sudo().create({'ref': ref, 'journal_id': journal_id, 'date': date_tz_user})
