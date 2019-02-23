@@ -30,8 +30,8 @@ class CashSession(models.Model):
             move = self.env['account.payment'].with_context(force_company=company_id)._create_account_move(
                 session.start_at, session.name, int(journal_id), company_id)
             orders.with_context(force_company=company_id)._create_account_move_line(session, move)
-            for order in session.order_ids.filtered(lambda o: o.state not in ['reconciled', 'cancelled']):
-                if order.state not in ('sent'):
+            for order in session.order_ids.filtered(lambda o: o.state not in ['reconciled', 'cancelled', 'sent']):
+                if order.state not in ('draft'):
                     raise UserError(
                         _("You cannot confirm all orders of this session, because they have not the 'paid' status.\n"
                           "{reference} is in state {state}, total amount: {total}, paid: {paid}").format(
@@ -41,7 +41,7 @@ class CashSession(models.Model):
                             paid=order,  # .amount_paid,
                         ))
                 order.action_cash_order_done()
-            #orders_to_reconcile = session.order_ids._filtered_for_reconciliation()
+            # orders_to_reconcile = session.order_ids._filtered_for_reconciliation()
             # orders_to_reconcile.sudo()._reconcile_payments()
 
     config_id = fields.Many2one(
