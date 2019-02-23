@@ -11,9 +11,9 @@ class CashSession(models.Model):
     _description = 'Cash Session'
 
     CASH_SESSION_STATE = [
-        ('opening_control', 'Opening Control'),  # method action_pos_session_open
-        ('opened', 'In Progress'),               # method action_pos_session_closing_control
-        ('closing_control', 'Closing Control'),  # method action_pos_session_close
+        ('opening_control', 'Opening Control'),  # method action_cash_session_open
+        ('opened', 'In Progress'),               # method action_cash_session_closing_control
+        ('closing_control', 'Closing Control'),  # method action_cash_session_close
         ('closed', 'Closed & Posted'),
     ]
 
@@ -232,7 +232,7 @@ class CashSession(models.Model):
 
         res = super(CashSession, self.with_context(ctx).sudo(uid)).create(values)
         if not pos_config.cash_control:
-            res.action_pos_session_open()
+            res.action_cash_session_open()
 
         return res
 
@@ -250,7 +250,7 @@ class CashSession(models.Model):
         })
 
     @api.multi
-    def action_pos_session_open(self):
+    def action_cash_session_open(self):
         # second browse because we need to refetch the data from the DB for cash_register_id
         # we only open sessions that haven't already been opened
         for session in self.filtered(lambda session: session.state == 'opening_control'):
@@ -263,27 +263,27 @@ class CashSession(models.Model):
         return True
 
     @api.multi
-    def action_pos_session_closing_control(self):
-        self._check_pos_session_balance()
+    def action_cash_session_closing_control(self):
+        self._check_cash_session_balance()
         for session in self:
             session.write({'state': 'closing_control', 'stop_at': fields.Datetime.now()})
             if not session.config_id.cash_control:
-                session.action_pos_session_close()
+                session.action_cash_session_close()
 
     @api.multi
-    def _check_pos_session_balance(self):
+    def _check_cash_session_balance(self):
         for session in self:
             for statement in session.statement_ids:
                 if (statement != session.cash_register_id) and (statement.balance_end != statement.balance_end_real):
                     statement.write({'balance_end_real': statement.balance_end})
 
     @api.multi
-    def action_pos_session_validate(self):
-        self._check_pos_session_balance()
-        self.action_pos_session_close()
+    def action_cash_session_validate(self):
+        self._check_cash_session_balance()
+        self.action_cash_session_close()
 
     @api.multi
-    def action_pos_session_close(self):
+    def action_cash_session_close(self):
         # Close CashBox
         for session in self:
             company_id = session.config_id.company_id.id
@@ -302,9 +302,9 @@ class CashSession(models.Model):
         self.write({'state': 'closed'})
         return {
             'type': 'ir.actions.client',
-            'name': 'Point of Sale Menu',
+            'name': 'Sessions',
             'tag': 'reload',
-            'params': {'menu_id': self.env.ref('point_of_sale.menu_point_root').id},
+            'params': {'menu_id': self.env.ref('cash_session.menu_cash_session_all').id},
         }
 
     @api.multi
@@ -314,7 +314,7 @@ class CashSession(models.Model):
         balance_type = context.get('balance') or 'start'
         context['bank_statement_id'] = self.cash_register_id.id
         context['balance'] = balance_type
-        context['default_pos_id'] = self.config_id.id
+        context['default_cash_id'] = self.config_id.id
 
         action = {
             'name': _('Cash Control'),
