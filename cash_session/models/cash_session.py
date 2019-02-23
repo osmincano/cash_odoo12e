@@ -47,7 +47,8 @@ class CashSession(models.Model):
     config_id = fields.Many2one(
         'cash.config', string='Cash Config',
         help="The physical Cash Config you will use.",
-        required=True,
+        required=False,
+        readonly=True,
         index=True)
     name = fields.Char(string='Session ID', required=True, readonly=True, default='/')
     user_id = fields.Many2one(
@@ -173,6 +174,7 @@ class CashSession(models.Model):
     @api.model
     def create(self, values):
         config_id = values.get('config_id') or self.env.context.get('default_config_id')
+        config_id = self.env['cash.config'].search([('user_id', '=', self.env.uid)], limit=1).id
         if not config_id:
             raise UserError(_("You should assign a Cash to your session."))
 
