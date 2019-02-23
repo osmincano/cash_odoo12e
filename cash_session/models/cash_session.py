@@ -30,10 +30,10 @@ class CashSession(models.Model):
             move = self.env['account.payment'].with_context(force_company=company_id)._create_account_move(
                 session.start_at, session.name, int(journal_id), company_id)
             orders.with_context(force_company=company_id)._create_account_move_line(session, move)
-            for order in session.order_ids.filtered(lambda o: o.state not in ['reconciled', 'cancelled', 'sent']):
+            for order in session.order_ids.filtered(lambda o: o.state not in ['reconciled', 'cancelled', 'sent', 'posted']):
                 if order.state not in ('draft'):
                     raise UserError(
-                        _("You cannot confirm all orders of this session, because they have not the 'paid' status.\n"
+                        _("You cannot confirm all orders of this session, because they have not the 'draft' status.\n"
                           "{reference} is in state {state}, total amount: {total}, paid: {paid}").format(
                             reference=order.name,  # .pos_reference or order.name,
                             state=order.state,  # .state,
