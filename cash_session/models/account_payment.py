@@ -21,5 +21,9 @@ class AccountPayment(models.Model):
         date_tz_user = fields.Date.to_string(date_tz_user)
         return self.env['account.move'].sudo().create({'ref': ref, 'journal_id': journal_id, 'date': date_tz_user})
 
+    @api.multi
+    def action_cash_order_done(self):
+        return self._create_account_move_line()
+
     def _create_account_move_line(self, session=None, move=None):
         return True
