@@ -82,7 +82,7 @@ class AccountPayment(models.Model):
         return args
 
     def add_payment(self, data):
-        """Create a new payment for the order"""
+        """Create a new payment"""
         self.ensure_one()
         args = self._prepare_bank_statement_line_payment_values(data)
         context = dict(self.env.context)

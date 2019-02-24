@@ -17,7 +17,7 @@ class CashConfig(models.Model):
         return self._default_invoice_journal()
 
     def _default_invoice_journal(self):
-        return self.env['account.journal'].search([('type', '=', 'sale'), ('company_id', '=', self.env.user.company_id.id)], limit=1)
+        return self.env['account.journal'].search([('type', '=', 'sale'), ('company_id', '=', self.company_id.id)], limit=1)
 
     name = fields.Char(string='Config Name', index=True, required=True,
                        help="An internal identification of the Cash Session Config.")
