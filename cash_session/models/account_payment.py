@@ -126,26 +126,15 @@ class AccountPayment(models.Model):
 
             # Create the journal entry
             rec.write({'state': 'posted'})
-            if not self.session_id:
-                amount = rec.amount * (rec.payment_type in ('outbound', 'transfer') and 1 or -1)
-                move = rec._create_payment_entry(amount)
-
-                # In case of a transfer, the first journal entry created debited the source liquidity account and credited
-                # the transfer account. Now we debit the transfer account and credit the destination liquidity account.
-                if rec.payment_type == 'transfer':
-                    transfer_credit_aml = move.line_ids.filtered(
-                        lambda r: r.account_id == rec.company_id.transfer_account_id)
-                    transfer_debit_aml = rec._create_transfer_entry(amount)
-                    (transfer_credit_aml + transfer_debit_aml).reconcile()
-
-                rec.write({'state': 'posted', 'move_name': move.name})
-        if self.session_id:
-            data = {
-                'amount':       self.amount or 0.0,
-                'payment_date': self.payment_date,
-                'statement_id': False,
-                'payment_name': self.payment_reference,
-                'journal':      self.journal_id.id,
-            }
-            self.add_payment(data)
+        monto = self.amount or 0.0
+        if self.payment_type == 'outbound':
+            monto = monto * -1
+        data = {
+            'amount':       monto,
+            'payment_date': self.payment_date,
+            'statement_id': False,
+            'payment_name': self.payment_reference,
+            'journal':      self.journal_id.id,
+        }
+        self.add_payment(data)
         return True
