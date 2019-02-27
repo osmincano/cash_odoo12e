@@ -27,9 +27,9 @@ class CashSession(models.Model):
                 raise UserError(_("You have to set a Sale Journal for the CASH:%s") %
                                 (session.config_id.name,))
 
-            move = self.env['account.payment'].with_context(force_company=company_id)._create_account_move(
-                session.start_at, session.name, int(journal_id), company_id)
-            orders.with_context(force_company=company_id)._create_account_move_line(session, move)
+            # move = self.env['account.payment'].with_context(force_company=company_id)._create_account_move(
+                # session.start_at, session.name, int(journal_id), company_id)
+            # orders.with_context(force_company=company_id)._create_account_move_line(session, move)
             for order in session.order_ids.filtered(lambda o: o.state not in ['reconciled', 'cancelled', 'sent', 'posted']):
                 if order.state not in ('draft'):
                     raise UserError(
@@ -40,7 +40,7 @@ class CashSession(models.Model):
                             total=order.amount,  # .amount_total,
                             paid=order,  # .amount_paid,
                         ))
-                order.action_cash_order_done()
+                # order.action_cash_order_done()
             # orders_to_reconcile = session.order_ids._filtered_for_reconciliation()
             # orders_to_reconcile.sudo()._reconcile_payments()
 

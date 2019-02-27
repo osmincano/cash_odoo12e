@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 # Copyright (C) 2004-2008 PC Solutions (<http://pcsol.be>). All Rights Reserved
 from odoo import fields, models, api, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 
 class AccountPayment(models.Model):
@@ -19,24 +19,24 @@ class AccountPayment(models.Model):
     statement_ids = fields.One2many('account.bank.statement.line', 'cash_statement_id', string='Payments', states={
                                     'draft': [('readonly', False)]}, readonly=True)
 
-    def _create_account_move(self, dt, ref, journal_id, company_id):
-        date_tz_user = fields.Datetime.context_timestamp(self, fields.Datetime.from_string(dt))
-        date_tz_user = fields.Date.to_string(date_tz_user)
-        return self.env['account.move'].sudo().create({'ref': ref, 'journal_id': journal_id, 'date': date_tz_user})
+    # def _create_account_move(self, dt, ref, journal_id, company_id):
+    #    date_tz_user = fields.Datetime.context_timestamp(self, fields.Datetime.from_string(dt))
+    #    date_tz_user = fields.Date.to_string(date_tz_user)
+    #    return self.env['account.move'].sudo().create({'ref': ref, 'journal_id': journal_id, 'date': date_tz_user})
 
-    @api.multi
-    def action_cash_order_done(self):
-        return self._create_account_move_line()
+    # @api.multi
+    # def action_cash_order_done(self):
+    #    return self._create_account_move_line()
 
-    def _create_account_move_line(self, session=None, move=None):
-        return True
+    # def _create_account_move_line(self, session=None, move=None):
+    #    return True
 
     def _prepare_bank_statement_line_payment_values(self, data):
         """Create a new payment for the order"""
         args = {
             'amount': data['amount'],
             'date': data.get('payment_date', fields.Date.context_today(self)),
-            'name': self.name + ': ' + (data.get('payment_name', '') or ''),
+            'name': self.name,
             'partner_id': self.env["res.partner"]._find_accounting_partner(self.partner_id).id or False,
         }
 
@@ -93,13 +93,59 @@ class AccountPayment(models.Model):
 
     @api.multi
     def post(self):
-        res = super(AccountPayment, self).post()
-        data = {
-            'amount':       self.amount or 0.0,
-            'payment_date': self.payment_date,
-            'statement_id': False,
-            'payment_name': self.payment_reference,
-            'journal':      self.journal_id.id,
-        }
-        self.add_payment(data)
-        return res
+        for rec in self:
+
+            if rec.state != 'draft':
+                raise UserError(_("Only a draft payment can be posted."))
+
+            if any(inv.state != 'open' for inv in rec.invoice_ids):
+                raise ValidationError(
+                    _("The payment cannot be processed because the invoice is not open!"))
+
+            # keep the name in case of a payment reset to draft
+            if not rec.name:
+                # Use the right sequence to set the name
+                if rec.payment_type == 'transfer':
+                    sequence_code = 'account.payment.transfer'
+                else:
+                    if rec.partner_type == 'customer':
+                        if rec.payment_type == 'inbound':
+                            sequence_code = 'account.payment.customer.invoice'
+                        if rec.payment_type == 'outbound':
+                            sequence_code = 'account.payment.customer.refund'
+                    if rec.partner_type == 'supplier':
+                        if rec.payment_type == 'inbound':
+                            sequence_code = 'account.payment.supplier.refund'
+                        if rec.payment_type == 'outbound':
+                            sequence_code = 'account.payment.supplier.invoice'
+                rec.name = self.env['ir.sequence'].with_context(
+                    ir_sequence_date=rec.payment_date).next_by_code(sequence_code)
+                if not rec.name and rec.payment_type != 'transfer':
+                    raise UserError(
+                        _("You have to define a sequence for %s in your company.") % (sequence_code,))
+
+            # Create the journal entry
+            rec.write({'state': 'posted'})
+            if not self.session_id:
+                amount = rec.amount * (rec.payment_type in ('outbound', 'transfer') and 1 or -1)
+                move = rec._create_payment_entry(amount)
+
+                # In case of a transfer, the first journal entry created debited the source liquidity account and credited
+                # the transfer account. Now we debit the transfer account and credit the destination liquidity account.
+                if rec.payment_type == 'transfer':
+                    transfer_credit_aml = move.line_ids.filtered(
+                        lambda r: r.account_id == rec.company_id.transfer_account_id)
+                    transfer_debit_aml = rec._create_transfer_entry(amount)
+                    (transfer_credit_aml + transfer_debit_aml).reconcile()
+
+                rec.write({'state': 'posted', 'move_name': move.name})
+        if self.session_id:
+            data = {
+                'amount':       self.amount or 0.0,
+                'payment_date': self.payment_date,
+                'statement_id': False,
+                'payment_name': self.payment_reference,
+                'journal':      self.journal_id.id,
+            }
+            self.add_payment(data)
+        return True
