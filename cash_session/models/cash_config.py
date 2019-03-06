@@ -19,8 +19,7 @@ class CashConfig(models.Model):
     def _default_invoice_journal(self):
         return self.env['account.journal'].search([('type', '=', 'sale'), ('company_id', '=', self.company_id.id)], limit=1)
 
-    name = fields.Char(string='Config Name', index=True, required=True,
-                       help="An internal identification of the Cash Session Config.")
+    name = fields.Char(string='Config Name', required=True, readonly=True, default='/')
     currency_id = fields.Many2one('res.currency', compute='_compute_currency',
                                   string="Currency")
     journal_ids = fields.Many2many(
@@ -39,6 +38,9 @@ class CashConfig(models.Model):
         default=_default_sale_journal)
     user_id = fields.Many2one('res.users', string="User")
 
+    _sql_constraints = [('uniq_name', 'unique(name)',
+                         "The name of this Cash Session must be unique !")]
+
     @api.depends('journal_id.currency_id', 'journal_id.company_id.currency_id')
     def _compute_currency(self):
         for cash_config in self:
@@ -46,3 +48,14 @@ class CashConfig(models.Model):
                 cash_config.currency_id = cash_config.journal_id.currency_id.id or cash_config.journal_id.company_id.currency_id.id
             else:
                 cash_config.currency_id = self.env.user.company_id.currency_id.id
+
+    @api.model
+    def create(self, values):
+        config_name = self.env['ir.sequence'].next_by_code('cash.config')
+        if values.get('name'):
+            config_name += ' ' + values['name']
+        values.update({
+            'name': config_name,
+        })
+        res = super(CashConfig, self).create(values)
+        return res

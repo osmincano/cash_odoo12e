@@ -104,7 +104,7 @@ class AccountPayment(models.Model):
 
     @api.multi
     def post(self):
-        config = self.env['cash.config'].search([('user_id', '=', self.env.user.id)])[0]
+        config = self.env['cash.config'].search([('user_id', '=', self.env.uid)], limit=1).id
         for rec in self:
 
             if rec.state != 'draft':

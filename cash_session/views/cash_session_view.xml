@@ -200,7 +200,7 @@
     </record>
 
     <record id="action_cash_session" model="ir.actions.act_window">
-        <field name="name">Sessions</field>
+        <field name="name">Cash Book</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">cash.session</field>
         <field name="view_type">form</field>
