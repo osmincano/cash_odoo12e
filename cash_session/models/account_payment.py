@@ -18,6 +18,7 @@ class AccountPayment(models.Model):
     picking_id = fields.Many2one('stock.picking', string='Picking', readonly=True, copy=False)
     statement_ids = fields.One2many('account.bank.statement.line', 'cash_statement_id', string='Payments', states={
                                     'draft': [('readonly', False)]}, readonly=True)
+    invoice_number = fields.Char(string='Invoice Number')
 
     # def _create_account_move(self, dt, ref, journal_id, company_id):
     #    date_tz_user = fields.Datetime.context_timestamp(self, fields.Datetime.from_string(dt))

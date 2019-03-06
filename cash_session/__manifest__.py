@@ -17,6 +17,7 @@
         'views/cash_config_view.xml',
         'views/cash_session_sequence.xml',
         'views/account_statement_view.xml',
+        'views/account_payment_view.xml',
     ],
     'demo': [
     ],
