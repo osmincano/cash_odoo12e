@@ -3,6 +3,7 @@
 # Copyright (C) 2004-2008 PC Solutions (<http://pcsol.be>). All Rights Reserved
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError
+import re
 
 
 class AccountPayment(models.Model):
@@ -18,7 +19,14 @@ class AccountPayment(models.Model):
     picking_id = fields.Many2one('stock.picking', string='Picking', readonly=True, copy=False)
     statement_ids = fields.One2many('account.bank.statement.line', 'cash_statement_id', string='Payments', states={
                                     'draft': [('readonly', False)]}, readonly=True)
-    invoice_number = fields.Char(string='Invoice Number')
+    invoice_number = fields.Char(string='Invoice Number', states={'draft': [('readonly', False)]})
+
+    @api.depends('invoice_number')
+    def _compute_invoice_number(self):
+        inv = self.invoice_number
+        inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-', '', inv)
+        inv = inv.upper()
+        self.invoice_number = inv
 
     # def _create_account_move(self, dt, ref, journal_id, company_id):
     #    date_tz_user = fields.Datetime.context_timestamp(self, fields.Datetime.from_string(dt))
