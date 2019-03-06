@@ -19,26 +19,28 @@ class AccountPayment(models.Model):
     picking_id = fields.Many2one('stock.picking', string='Picking', readonly=True, copy=False)
     statement_ids = fields.One2many('account.bank.statement.line', 'cash_statement_id', string='Payments', states={
                                     'draft': [('readonly', False)]}, readonly=True)
-    invoice_number = fields.Char(string='Invoice Number', states={'draft': [('readonly', False)]})
+    invoice_number = fields.Char(string='Invoice Number', readonly=True,
+                                 states={'draft': [('readonly', False)]})
 
-    @api.depends('invoice_number')
-    def _compute_invoice_number(self):
-        inv = self.invoice_number
-        inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-', '', inv)
-        inv = inv.upper()
-        self.invoice_number = inv
+    @api.multi
+    def _write(self, values):
+        if 'invoice_number' in values:
+            inv = values["invoice_number"]
+            inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-|\,', '', inv)
+            inv = inv.upper()
+            values["invoice_number"] = inv
+        res = super(AccountPayment, self)._write(values)
+        return res
 
-    # def _create_account_move(self, dt, ref, journal_id, company_id):
-    #    date_tz_user = fields.Datetime.context_timestamp(self, fields.Datetime.from_string(dt))
-    #    date_tz_user = fields.Date.to_string(date_tz_user)
-    #    return self.env['account.move'].sudo().create({'ref': ref, 'journal_id': journal_id, 'date': date_tz_user})
-
-    # @api.multi
-    # def action_cash_order_done(self):
-    #    return self._create_account_move_line()
-
-    # def _create_account_move_line(self, session=None, move=None):
-    #    return True
+    @api.model
+    def create(self, values):
+        if 'invoice_number' in values:
+            inv = values["invoice_number"]
+            inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-|\,', '', inv)
+            inv = inv.upper()
+            values["invoice_number"] = inv
+        res = super(AccountPayment, self).create(values)
+        return res
 
     def _prepare_bank_statement_line_payment_values(self, data):
         """Create a new payment for the order"""
@@ -102,6 +104,7 @@ class AccountPayment(models.Model):
 
     @api.multi
     def post(self):
+        config = self.env['cash.config'].search([('user_id', '=', self.env.user.id)])[0]
         for rec in self:
 
             if rec.state != 'draft':
@@ -133,17 +136,34 @@ class AccountPayment(models.Model):
                     raise UserError(
                         _("You have to define a sequence for %s in your company.") % (sequence_code,))
 
-            # Create the journal entry
-            rec.write({'state': 'posted'})
-        monto = self.amount or 0.0
-        if self.payment_type == 'outbound':
-            monto = monto * -1
-        data = {
-            'amount':       monto,
-            'payment_date': self.payment_date,
-            'statement_id': False,
-            'payment_name': self.payment_reference,
-            'journal':      self.journal_id.id,
-        }
-        self.add_payment(data)
+            if not config:
+                # Create the journal entry
+                amount = rec.amount * (rec.payment_type in ('outbound', 'transfer') and 1 or -1)
+                move = rec._create_payment_entry(amount)
+
+                # In case of a transfer, the first journal entry created debited the source liquidity account and credited
+                # the transfer account. Now we debit the transfer account and credit the destination liquidity account.
+                if rec.payment_type == 'transfer':
+                    transfer_credit_aml = move.line_ids.filtered(
+                        lambda r: r.account_id == rec.company_id.transfer_account_id)
+                    transfer_debit_aml = rec._create_transfer_entry(amount)
+                    (transfer_credit_aml + transfer_debit_aml).reconcile()
+
+                rec.write({'state': 'posted', 'move_name': move.name})
+
+            if config:
+                # Create the journal entry with session
+                rec.write({'state': 'posted'})
+        if config:
+            monto = self.amount or 0.0
+            if self.payment_type == 'outbound':
+                monto = monto * -1
+            data = {
+                'amount':       monto,
+                'payment_date': self.payment_date,
+                'statement_id': False,
+                'payment_name': self.payment_reference,
+                'journal':      self.journal_id.id,
+            }
+            self.add_payment(data)
         return True
