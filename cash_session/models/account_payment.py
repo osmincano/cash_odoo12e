@@ -13,7 +13,7 @@ class AccountPayment(models.Model):
         return self.env['cash.session'].search([('state', '=', 'opened'), ('user_id', '=', self.env.uid)], limit=1)
 
     session_id = fields.Many2one(
-        'cash.session', string='Session', required=True, index=True,
+        'cash.session', string='Session', required=False, index=True,
         domain="[('state', '=', 'opened')]", states={'draft': [('readonly', False)]},
         readonly=True, default=_default_session)
     picking_id = fields.Many2one('stock.picking', string='Picking', readonly=True, copy=False)
@@ -26,6 +26,7 @@ class AccountPayment(models.Model):
         related='session_id.journal_ids',
         readonly=True,
         string='Available Payment Methods')
+    journal_id = fields.Many2one('account.journal', string='Payment Journal 2', required=True)
 
     @api.multi
     def _write(self, values):
