@@ -21,14 +21,20 @@ class AccountPayment(models.Model):
                                     'draft': [('readonly', False)]}, readonly=True)
     invoice_number = fields.Char(string='Invoice Number', readonly=True,
                                  states={'draft': [('readonly', False)]})
+    journal_ids = fields.Many2many(
+        'account.journal',
+        related='session_id.journal_ids',
+        readonly=True,
+        string='Available Payment Methods')
 
     @api.multi
     def _write(self, values):
         if 'invoice_number' in values:
             inv = values["invoice_number"]
-            inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-|\,', '', inv)
-            inv = inv.upper()
-            values["invoice_number"] = inv
+            if inv:
+                inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-|\,', '', inv)
+                inv = inv.upper()
+                values["invoice_number"] = inv
         res = super(AccountPayment, self)._write(values)
         return res
 
@@ -36,9 +42,10 @@ class AccountPayment(models.Model):
     def create(self, values):
         if 'invoice_number' in values:
             inv = values["invoice_number"]
-            inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-|\,', '', inv)
-            inv = inv.upper()
-            values["invoice_number"] = inv
+            if inv:
+                inv = re.sub('\ |\?|\.|\!|\/|\;|\:|\-|\,', '', inv)
+                inv = inv.upper()
+                values["invoice_number"] = inv
         res = super(AccountPayment, self).create(values)
         return res
 
