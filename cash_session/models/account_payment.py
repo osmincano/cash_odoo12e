@@ -26,7 +26,6 @@ class AccountPayment(models.Model):
         related='session_id.journal_ids',
         readonly=True,
         string='Available Payment Methods')
-    journal_id = fields.Many2one('account.journal', string='Payment Journal 2', required=True)
 
     @api.multi
     def _write(self, values):

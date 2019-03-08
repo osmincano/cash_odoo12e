@@ -10,9 +10,6 @@
                     <field name="invoice_number"/>
                     <field name="journal_ids" invisible="1"/>
             </field>
-            <field name="journal_id" position="replace">
-                    <field name="journal_id" widget="selection" attrs="{'readonly': [('state', '!=', 'draft')]}" domain="[('id', 'in', journal_ids]"/>
-            </field>
         </field>
     </record>
 
