@@ -11,8 +11,8 @@
     'description': "",
     'depends': ['account'],
     'data': [
-        'security/ir.model.access.csv',
         'security/cash_session_security.xml',
+        'security/ir.model.access.csv',
         'wizard/cash_box.xml',
         'views/cash_session_view.xml',
         'views/cash_config_view.xml',

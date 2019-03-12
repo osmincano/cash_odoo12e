@@ -21,7 +21,7 @@ class CashConfig(models.Model):
 
     name = fields.Char(string='Config Name', required=True, readonly=True, default='/')
     currency_id = fields.Many2one('res.currency', compute='_compute_currency',
-                                  string="Currency")
+                                  string="Currency", readonly=False)
     journal_ids = fields.Many2many(
         'account.journal', 'cash_config_journal_rel',
         'cash_config_id', 'journal_id', string='Available Payment Methods',
