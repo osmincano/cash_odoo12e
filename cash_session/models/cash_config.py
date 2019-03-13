@@ -20,7 +20,7 @@ class CashConfig(models.Model):
         return self.env['account.journal'].search([('type', '=', 'sale'), ('company_id', '=', self.company_id.id)], limit=1)
 
     name = fields.Char(string='Config Name', required=True, readonly=True, default='/')
-    currency_id = fields.Many2one('res.currency', compute='_compute_currency',
+    currency_id = fields.Many2one('res.currency',  # compute='_compute_currency',
                                   string="Currency", readonly=False)
     journal_ids = fields.Many2many(
         'account.journal', 'cash_config_journal_rel',
