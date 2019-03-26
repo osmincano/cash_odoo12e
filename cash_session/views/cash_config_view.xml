@@ -17,7 +17,7 @@
                             <group>
                                 <field name="cash_control"/>
                                 <field name="journal_ids"/>
-                                <field name="journal_id" domain="[('company_id','=',company_id)]"/>
+                                <field name="journal_id"/>
                             </group>
                         </group>
                     </sheet>
